@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vivia Health Case Management Planning Tool</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light background */
+        }
+        /* Style for collapsible sections */
+        .collapsible-header {
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background-color: #e2e8f0; /* Light grey background for headers */
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+            transition: background-color 0.3s ease;
+        }
+        .collapsible-header:hover {
+            background-color: #cbd5e1; /* Slightly darker on hover */
+        }
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out;
+            background-color: #ffffff; /* White background for content */
+            padding: 0 1rem; /* Initial padding, will be adjusted when open */
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .collapsible-content.open {
+            max-height: 2000px; /* Large value to allow content to expand */
+            padding: 1rem;
+        }
+        .arrow-icon {
+            transition: transform 0.3s ease;
+        }
+        .arrow-icon.rotate {
+            transform: rotate(90deg);
+        }
+        @media print {
+            .print\\:hidden {
+                display: none !important;
+            }
+            .collapsible-content {
+                max-height: none !important;
+                overflow: visible !important;
+                padding: 1rem;
+            }
+            body {
+                background-color: white;
+            }
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-6 lg:p-8">
+
+    <div id="root" class="max-w-6xl mx-auto bg-white rounded-xl shadow-2xl p-6 sm:p-8 lg:p-10"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+        const { createRoot } = ReactDOM;
+
+        const goalsAndTimeData = {
+            "Family Functioning": { "Face-to-Face (min/week)": 1.56, "Non-Face-to-Face (min/week)": 28.44, "Total Weekly Minutes": 30 },
+            "Living Situation": { "Face-to-Face (min/week)": 1.56, "Non-Face-to-Face (min/week)": 28.44, "Total Weekly Minutes": 30 },
+            "Residential Stability": { "Face-to-Face (min/week)": 1.56, "Non-Face-to-Face (min/week)": 28.44, "Total Weekly Minutes": 30 },
+            "Medication Compliance": { "Face-to-Face (min/week)": 1.56, "Non-Face-to-Face (min/week)": 28.44, "Total Weekly Minutes": 30 },
+            "Transportation": { "Face-to-Face (min/week)": 1.56, "Non-Face-to-Face (min/week)": 28.44, "Total Weekly Minutes": 30 },
+            "Sleep": { "Face-to-Face (min/week)": 1.56, "Non-Face-to-Face (min/week)": 28.44, "Total Weekly Minutes": 30 },
+            "Language and Literacy": { "Face-to-Face (min/week)": 5, "Non-Face-to-Face (min/week)": 15, "Total Weekly Minutes": 20 },
+            "Culture Stress": { "Face-to-Face (min/week)": 10, "Non-Face-to-Face (min/week)": 20, "Total Weekly Minutes": 30 },
+            "Traditions and Cultural Rituals": { "Face-to-Face (min/week)": 2, "Non-Face-to-Face (min/week)": 18, "Total Weekly Minutes": 20 },
+            "Basic ADL": { "Face-to-Face (min/week)": 10, "Non-Face-to-Face (min/week)": 20, "Total Weekly Minutes": 30 },
+            "Independent Living Skills (Age 16+)": { "Face-to-Face (min/week)": 8, "Non-Face-to-Face (min/week)": 22, "Total Weekly Minutes": 30 },
+            "Routine": { "Face-to-Face (min/week)": 2, "Non-Face-to-Face (min/week)": 18, "Total Weekly Minutes": 20 },
+            "Recreation/Play": { "Face-to-Face (min/week)": 1, "Non-Face-to-Face (min/week)": 9, "Total Weekly Minutes": 10 },
+            "Communication": { "Face-to-Face (min/week)": 5, "Non-Face-to-Face (min/week)": 15, "Total Weekly Minutes": 20 },
+            "School/Daycare": { "Face-to-Face (min/week)": 3, "Non-Face-to-Face (min/week)": 17, "Total Weekly Minutes": 20 },
+            "Job Functioning (Age 16+)": { "Face-to-Face (min/week)": 5, "Non-Face-to-Face (min/week)": 25, "Total Weekly Minutes": 30 },
+            "Decision Making": { "Face-to-Face (min/week)": 5, "Non-Face-to-Face (min/week)": 15, "Total Weekly Minutes": 20 },
+            "Intimate Relationships (Age 16+)": { "Face-to-Face (min/week)": 10, "Non-Face-to-Face (min/week)": 20, "Total Weekly Minutes": 30 },
+            "Sexual Development (Age 6+)": { "Face-to-Face (min/week)": 5, "Non-Face-to-Face (min/week)": 15, "Total Weekly Minutes": 20 },
+            "Parental/Caregiving Role (Age 16+)": { "Face-to-Face (min/week)": 8, "Non-Face-to-Face (min/week)": 22, "Total Weekly Minutes": 30 },
+            "Legal (Age 6+)": { "Face-to-Face (min/week)": 2, "Non-Face-to-Face (min/week)": 18, "Total Weekly Minutes": 20 },
+            "Medical/Physical": { "Face-to-Face (min/week)": 5, "Non-Face-to-Face (min/week)": 25, "Total Weekly Minutes": 30 },
+            "Hoarding": { "Face-to-Face (min/week)": 10, "Non-Face-to-Face (min/week)": 20, "Total Weekly Minutes": 30 },
+            "Mental Health & Wellness": { "Face-to-Face (min/week)": 15, "Non-Face-to-Face (min/week)": 35, "Total Weekly Minutes": 50 },
+        };
+
+        const comprehensiveGoalsData = [
+            {"Domain": "Culture", "CANS ITEM": "Language and Literacy", "Recommended Goal": "To improve communication skills and support literacy development.", "Objectives": "Client will identify 2 areas where they need language or reading support; Complete 1 literacy-building task weekly.", "Interventions": "Provide reading materials or language aids; Connect with ESL/literacy support services; Practice communication skills during sessions.", "Forms and Tools": ""},
+            {"Domain": "Culture", "CANS ITEM": "Culture Stress", "Recommended Goal": "To reduce stress related to cultural identity and improve cultural adaptation.", "Objectives": "Client will identify 2 sources of cultural stress; Practice 1 cultural coping strategy weekly.", "Interventions": "Explore experiences of cultural stress; Validate and affirm identity; Offer culturally appropriate resources and supports.", "Forms and Tools": ""},
+            {"Domain": "Culture", "CANS ITEM": "Traditions and Cultural Rituals", "Recommended Goal": "To preserve and support participation in cultural traditions and rituals.", "Objectives": "Client will describe 2 cultural practices they value; Participate in 1 cultural tradition over the next 30 days.", "Interventions": "Discuss impact of disrupted cultural practices; Support connection to cultural events or groups; Incorporate cultural values into care planning.", "Forms and Tools": ""},
+            {"Domain": "Life Functioning", "CANS ITEM": "Family Functioning", "Recommended Goal": "To improve positive interactions and increase supportive communication with family members.", "Objectives": "Engage in 1 family contact/week; Attend 2 family sessions in 90 days.", "Interventions": "Coordinate family sessions; Provide communication tools; Therapist support.", "Forms and Tools": ""},
+            {"Domain": "Life Functioning", "CANS ITEM": "Living Situation", "Recommended Goal": "To maintain stable housing in a safe and healthy living environment.", "Objectives": "Maintain current housing 90 days; Participate in 1 housing safety review.", "Interventions": "Home visit by CM; Housing checklist; Landlord communication support.", "Forms and Tools": ""},
+            {"Domain": "Life Functioning", "CANS ITEM": "Residential Stability", "Recommended Goal": "To maintain a secure and consistent residence without unplanned transitions.", "Objectives": "Avoid housing transitions; Develop housing crisis plan in 30 days.", "Interventions": "Create contingency plan; Weekly housing check-ins.", "Forms and Tools": ""},
+            {"Domain": "Life Functioning", "CANS ITEM": "Basic ADL", "Recommended Goal": "To enhance daily living skills and promote self-sufficiency.", "Objectives": "Client will complete 3 ADL tasks independently per day; Create a daily ADL checklist.", "Interventions": "Provide coaching on hygiene/grooming; Practice meal planning and preparation; Use a visual schedule for tasks.", "Forms and Tools": ""},
+            {"Domain": "Life Functioning", "CANS ITEM": "Independent Living Skills (Age 16+)", "Recommended Goal": "To develop essential skills for independent living and personal autonomy.", "Objectives": "Client will manage a personal budget for 30 days; Practice 2 public transportation routes.", "Interventions": "Financial literacy education; Role-play skill-building scenarios; Support in accessing community resources.", "Forms and Tools": ""},
+            {"Domain": "Life Functioning", "CANS ITEM": "Routine", "Recommended Goal": "To establish a consistent daily routine that supports mental and physical well-being.", "Objectives": "Client will follow a daily schedule 5 days/week; Identify 1 positive morning and evening routine.", "Interventions": "Assist in creating a personalized schedule; Discuss benefits of routine; Incorporate self-care activities.", "Forms and Tools": ""},
+            {"Domain": "Life Functioning", "CANS ITEM": "Recreation/Play", "Recommended Goal": "To increase engagement in recreational activities that promote well-being and social connection.", "Objectives": "Client will participate in 1 recreational activity/week; Identify 2 new hobbies.", "Interventions": "Explore community resources (e.g., parks, clubs); Support in finding affordable activities; Encourage social participation.", "Forms and Tools": ""},
+            {"Domain": "Life Functioning", "CANS ITEM": "Communication", "Recommended Goal": "To improve communication skills for effective self-expression and interpersonal relationships.", "Objectives": "Client will use 'I feel' statements 3 times per week; Practice active listening during sessions.", "Interventions": "Provide assertiveness training; Teach conflict resolution skills; Role-play difficult conversations.", "Forms and Tools": ""},
+            {"Domain": "Life Functioning", "CANS ITEM": "School/Daycare", "Recommended Goal": "To improve academic or developmental functioning within the school or daycare setting.", "Objectives": "Client will attend school 90% of the time; Meet with teacher to discuss progress.", "Interventions": "Coordinate with school staff; Address academic or social barriers; Provide support for homework.", "Forms and Tools": ""},
+            {"Domain": "Life Functioning", "CANS ITEM": "Job Functioning (Age 16+)", "Recommended Goal": "To enhance job-related skills and support successful employment.", "Objectives": "Client will apply for 2 jobs/month; Develop a resume and cover letter in 30 days.", "Interventions": "Vocational assessment; Resume building assistance; Job coaching and interview practice.", "Forms and Tools": ""},
+            {"Domain": "Life Functioning", "CANS ITEM": "Sleep", "Recommended Goal": "To improve sleep hygiene and sleep quality.", "Objectives": "Client will reduce screen time before bed 5 nights per week; Track sleep patterns in a journal.", "Interventions": "Create bedtime routine; Educate on sleep hygiene; Encourage relaxation before bed.", "Forms and Tools": ""},
+            {"Domain": "Life Functioning", "CANS ITEM": "Decision Making", "Recommended Goal": "To improve decision-making skills and support personal agency.", "Objectives": "Client will identify 3 pros and cons before a decision; Practice making 1 small decision per week.", "Interventions": "Teach problem-solving model; Use decision-making worksheets; Explore values and priorities.", "Forms and Tools": ""},
+            {"Domain": "Life Functioning", "CANS ITEM": "Intimate Relationships (Age 16+)", "Recommended Goal": "To foster healthy and supportive intimate relationships.", "Objectives": "Client will identify 3 healthy relationship characteristics; Discuss communication strategies with partner.", "Interventions": "Provide couples counseling referral; Explore attachment styles; Teach boundary-setting skills.", "Forms and Tools": ""},
+            {"Domain": "Life Functioning", "CANS ITEM": "Sexual Development (Age 6+)", "Recommended Goal": "To promote healthy sexual development and positive sexual identity.", "Objectives": "Client will identify 2 healthy sexual boundaries; Discuss safe sex practices.", "Interventions": "Provide age-appropriate education; Offer resources on sexual health; Address past trauma in a safe space.", "Forms and Tools": ""},
+            {"Domain": "Life Functioning", "CANS ITEM": "Parental/Caregiving Role (Age 16+)", "Recommended Goal": "To support the client in their parental or caregiving role.", "Objectives": "Client will attend 1 parenting class; Identify 3 strategies for positive discipline.", "Interventions": "Connect with parenting support groups; Provide psychoeducation on child development; Develop stress management plans for caregiving.", "Forms and Tools": ""},
+            {"Domain": "Life Functioning", "CANS ITEM": "Legal (Age 6+)", "Recommended Goal": "To navigate the legal system and reduce legal-related stress.", "Objectives": "Client will attend all scheduled court dates for 90 days; Understand 2 legal terms related to their case.", "Interventions": "Assist in coordinating with legal counsel; Provide emotional support before/after court; Educate on legal rights and responsibilities.", "Forms and Tools": ""},
+            {"Domain": "Life Functioning", "CANS ITEM": "Medical/Physical", "Recommended Goal": "To improve physical health and medical self-management.", "Objectives": "Client will attend 2 medical appointments in 90 days; Monitor a physical health symptom daily.", "Interventions": "Coordinate with PCP; Provide health education; Support in navigating the healthcare system.", "Forms and Tools": ""},
+            {"Domain": "Life Functioning", "CANS ITEM": "Medication Compliance", "Recommended Goal": "To support medication adherence and self-management.", "Objectives": "Client will use reminders or logs to track medication for 45 days; Attend medication education session.", "Interventions": "Set up pillbox/app reminders; Log medication intake; Discuss purpose and side effects.", "Forms and Tools": ""},
+            {"Domain": "Life Functioning", "CANS ITEM": "Transportation", "Recommended Goal": "To ensure reliable transportation for essential services.", "Objectives": "Client will apply for PACE/Reduced Fare Program in 30 days; Schedule all rides 24 hours in advance.", "Interventions": "Assist with applications; Practice scheduling transportation; Confirm appointment transport.", "Forms and Tools": ""},
+            {"Domain": "Life Functioning", "CANS ITEM": "Hoarding", "Recommended Goal": "To reduce hoarding behaviors and create a safe living environment.", "Objectives": "Client will clear 1 square foot of space weekly; Attend 2 sessions with an organizational specialist.", "Interventions": "Connect with professional organizers; Provide CBT for hoarding; Address underlying anxieties.", "Forms and Tools": ""},
+            {"Domain": "Life Functioning", "CANS ITEM": "Mental Health & Wellness", "Recommended Goal": "To improve overall mental health and daily well-being.", "Objectives": "Client will identify 3 coping skills; Engage in a self-care activity weekly.", "Interventions": "Provide counseling/therapy; Teach mindfulness techniques; Connect with peer support groups.", "Forms and Tools": ""},
+        ];
+
+        const caseloadData = [
+            { "Caseload Size": 30, "Minutes per Client/Week": 240, "Total Weekly Minutes": 7200, "Total Weekly Hours": 120, "FTE (40hr/wk baseline)": 3 },
+            { "Caseload Size": 35, "Minutes per Client/Week": 240, "Total Weekly Minutes": 8400, "Total Weekly Hours": 140, "FTE (40hr/wk baseline)": 3.5 },
+            { "Caseload Size": 40, "Minutes per Client/Week": 240, "Total Weekly Minutes": 9600, "Total Weekly Hours": 160, "FTE (40hr/wk baseline)": 4 }
+        ];
+
+        const nonF2FTasksData = [
+            { "Activity": "Daily Medication Check", "Target Area": "Medication Compliance", "Time (min)": 10, "Service Type": "Case Management" },
+            { "Activity": "Medication Management Review", "Target Area": "Medication Compliance", "Time (min)": 15, "Service Type": "Case Management" },
+            { "Activity": "Money Management Review", "Target Area": "Independent Living Skills", "Time (min)": 20, "Service Type": "Community Support" },
+            { "Activity": "Chart Review", "Target Area": "Medication Compliance / Medical", "Time (min)": 15, "Service Type": "Administrative" },
+            { "Activity": "Quick View Update", "Target Area": "Mental Health & Wellness", "Time (min)": 10, "Service Type": "Admin/Support" },
+            { "Activity": "Reminder Call (confirmation)", "Target Area": "Routine", "Time (min)": 5, "Service Type": "Community Support" },
+            { "Activity": "Morning Meeting", "Target Area": "Team Coordination", "Time (min)": 30, "Service Type": "Administrative" },
+            { "Activity": "Door Knocking", "Target Area": "Living Situation", "Time (min)": 15, "Service Type": "Outreach" },
+            { "Activity": "Insurance Authorization Review", "Target Area": "Medical/Physical", "Time (min)": 20, "Service Type": "Case Management" },
+            { "Activity": "Hospital Coordination", "Target Area": "Medical/Physical", "Time (min)": 20, "Service Type": "Care Coordination" },
+            { "Activity": "Pharmacy Coordination", "Target Area": "Medication Compliance", "Time (min)": 15, "Service Type": "Case Management" },
+            { "Activity": "Treatment Plan Initial/ Review/Update", "Target Area": "All Domains", "Time (min)": 30, "Service Type": "Clinical Documentation" },
+            { "Activity": "Supervision", "Target Area": "Clinical Oversight", "Time (min)": 30, "Service Type": "Admin/QA" },
+            { "Activity": "Applying for Benefits", "Target Area": "Residential Stability", "Time (min)": 30, "Service Type": "Case Management" },
+            { "Activity": "Team Supervision/Discussion", "Target Area": "Multi-domain", "Time (min)": 30, "Service Type": "Administrative/QA" }
+        ];
+
+        const TabButton = ({ active, onClick, children }) => (
+            <button
+                onClick={onClick}
+                className={`py-2 px-4 text-sm font-medium rounded-t-lg transition-colors duration-200
+                ${active ? 'bg-white text-blue-700 border-b-2 border-blue-700' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
+            >
+                {children}
+            </button>
+        );
+
+        const GoalsTable = () => (
+            <div className="overflow-x-auto rounded-lg shadow-md">
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Domain</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CANS Item</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recommended Goal</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Objectives</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Interventions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {comprehensiveGoalsData.map((item, index) => (
+                            <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.Domain}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item['CANS ITEM']}</td>
+                                <td className="px-6 py-4 text-sm text-gray-500 max-w-xs">{item['Recommended Goal']}</td>
+                                <td className="px-6 py-4 text-sm text-gray-500 max-w-xs">{item.Objectives}</td>
+                                <td className="px-6 py-4 text-sm text-gray-500 max-w-xs">{item.Interventions}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        );
+
+        const CaseloadPlanner = () => {
+            const [caseloadSize, setCaseloadSize] = useState(30);
+            const [minutesPerClient, setMinutesPerClient] = useState(240);
+            
+            const totalWeeklyMinutes = caseloadSize * minutesPerClient;
+            const totalWeeklyHours = (totalWeeklyMinutes / 60).toFixed(2);
+            const fte = (totalWeeklyHours / 40).toFixed(2);
+            
+            return (
+                <div className="space-y-6">
+                    <div className="bg-gray-100 p-6 rounded-lg shadow-inner">
+                        <h3 className="text-xl font-semibold text-gray-800 mb-4">Caseload Projection Calculator</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Caseload Size</label>
+                                <input
+                                    type="number"
+                                    value={caseloadSize}
+                                    onChange={(e) => setCaseloadSize(e.target.value)}
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    min="0"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Minutes per Client/Week</label>
+                                <input
+                                    type="number"
+                                    value={minutesPerClient}
+                                    onChange={(e) => setMinutesPerClient(e.target.value)}
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    min="0"
+                                />
+                            </div>
+                        </div>
+                        <div className="mt-6 p-4 bg-white rounded-md shadow-sm border border-gray-200">
+                            <p className="text-sm text-gray-600">Calculated Totals:</p>
+                            <p className="text-lg font-bold text-blue-700">Total Weekly Minutes: <span className="font-normal text-gray-900">{totalWeeklyMinutes}</span></p>
+                            <p className="text-lg font-bold text-blue-700">Total Weekly Hours: <span className="font-normal text-gray-900">{totalWeeklyHours}</span></p>
+                            <p className="text-lg font-bold text-blue-700">FTE (40hr/wk baseline): <span className="font-normal text-gray-900">{fte}</span></p>
+                        </div>
+                    </div>
+                    
+                    <div className="overflow-x-auto rounded-lg shadow-md">
+                        <h3 className="text-xl font-semibold text-gray-800 mb-2 p-4">Reference Caseload Projections</h3>
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Caseload Size</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Minutes per Client/Week</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Weekly Minutes</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Weekly Hours</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">FTE (40hr/wk baseline)</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {caseloadData.map((item, index) => (
+                                    <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item['Caseload Size']}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item['Minutes per Client/Week']}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item['Total Weekly Minutes']}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item['Total Weekly Hours']}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item['FTE (40hr/wk baseline)']}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+        };
+
+        const NonF2FTasksTable = () => (
+            <div className="overflow-x-auto rounded-lg shadow-md">
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activity</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Target Area</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time (min)</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service Type</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {nonF2FTasksData.map((item, index) => (
+                            <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.Activity}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item['Target Area']}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item['Time (min)']}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item['Service Type']}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        );
+
+        const ClientPlanner = ({ selectedItems, handleRatingChange, planDate, handleDateChange }) => {
+            const getFilteredItems = () => {
+                return Object.keys(selectedItems)
+                    .filter(key => selectedItems[key].rating === '2' || selectedItems[key].rating === '3')
+                    .map(key => selectedItems[key].details);
+            };
+
+            const calculateTotals = () => {
+                const filteredItems = getFilteredItems();
+                const totalF2F = filteredItems.reduce((sum, item) => sum + (item?.['Face-to-Face (min/week)'] || 0), 0);
+                const totalNonF2F = filteredItems.reduce((sum, item) => sum + (item?.['Non-Face-to-Face (min/week)'] || 0), 0);
+                const totalWeekly = filteredItems.reduce((sum, item) => sum + (item?.['Total Weekly Minutes'] || 0), 0);
+                return {
+                    totalF2F: totalF2F.toFixed(2),
+                    totalNonF2F: totalNonF2F.toFixed(2),
+                    totalWeekly: totalWeekly.toFixed(2),
+                    totalHours: (totalWeekly / 60).toFixed(2),
+                };
+            };
+
+            const totals = calculateTotals();
+
+            return (
+                <div className="space-y-8">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-xl font-semibold text-blue-700">Select Patient Needs (CANS Rating)</h3>
+                        <div className="flex items-center space-x-2">
+                            <label htmlFor="planDate" className="text-sm font-medium text-gray-700">Plan Date:</label>
+                            <input 
+                                type="date" 
+                                id="planDate" 
+                                value={planDate} 
+                                onChange={handleDateChange} 
+                                className="mt-1 block rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                            />
+                        </div>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-6">Select a rating of '2' or '3' for each function item to identify the need for clinical intervention.</p>
+                    <div className="space-y-4">
+                        {comprehensiveGoalsData.map((item, index) => (
+                            <div key={index} className="flex flex-col sm:flex-row sm:items-center p-4 bg-gray-100 rounded-lg shadow-sm">
+                                <span className="font-medium text-gray-800 w-full sm:w-1/2 mb-2 sm:mb-0">{item['CANS ITEM']}</span>
+                                <div className="flex justify-between sm:justify-end w-full sm:w-1/2 space-x-2">
+                                    {[0, 1, 2, 3].map(rating => (
+                                        <label key={rating} className="inline-flex items-center">
+                                            <input
+                                                type="radio"
+                                                name={`rating-${index}`}
+                                                value={rating}
+                                                checked={selectedItems[item['CANS ITEM']]?.rating === String(rating)}
+                                                onChange={(e) => handleRatingChange(item['CANS ITEM'], e.target.value)}
+                                                className="form-radio text-blue-600"
+                                            />
+                                            <span className="ml-1 text-gray-700">{rating}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    <hr className="my-8" />
+                    <div>
+                        <h3 className="text-xl font-semibold text-blue-700 mb-4">Projected Weekly Plan and Time Allocation</h3>
+                        <div className="bg-blue-100 p-6 rounded-lg shadow-inner mb-6">
+                            <p className="text-lg font-bold text-blue-800">Plan Date: <span className="font-normal text-gray-900">{planDate}</span></p>
+                            <p className="text-lg font-bold text-blue-800">Total Projected Weekly Minutes: <span className="font-normal text-gray-900">{totals.totalWeekly} min</span></p>
+                            <p className="text-lg font-bold text-blue-800">Total Projected Weekly Hours: <span className="font-normal text-gray-900">{totals.totalHours} hrs</span></p>
+                            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <p className="text-md font-bold text-blue-700">Total Face-to-Face Minutes: <span className="font-normal text-gray-900">{totals.totalF2F} min</span></p>
+                                <p className="text-md font-bold text-blue-700">Total Non-Face-to-Face Minutes: <span className="font-normal text-gray-900">{totals.totalNonF2F} min</span></p>
+                            </div>
+                        </div>
+                        {getFilteredItems().length > 0 ? (
+                            <div className="space-y-6">
+                                {getFilteredItems().map((item, index) => (
+                                    <div key={index} className="p-6 bg-white rounded-lg shadow-md border-l-4 border-blue-500">
+                                        <h4 className="text-md font-bold text-gray-900 mb-2">{item['CANS ITEM']}</h4>
+                                        <p className="text-sm text-gray-700"><span className="font-semibold">Recommended Goal:</span> {item['Recommended Goal']}</p>
+                                        <p className="text-sm text-gray-700"><span className="font-semibold">Objectives:</span> {item.Objectives}</p>
+                                        <p className="text-sm text-gray-700"><span className="font-semibold">Interventions:</span> {item.Interventions}</p>
+                                        <p className="text-sm text-gray-700 mt-2"><span className="font-semibold">Projected Weekly Time:</span> {item['Total Weekly Minutes'] > 0 ? `${item['Total Weekly Minutes']} min (${item['Face-to-Face (min/week)']} F2F, ${item['Non-Face-to-Face (min/week)']} Non-F2F)` : 'Time allocation not specified in data'}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-gray-500 italic text-center">Select a CANS rating of 2 or 3 for a function item to see the recommended plan.</p>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('planner');
+            const [selectedItems, setSelectedItems] = useState({});
+            const [planDate, setPlanDate] = useState(new Date().toISOString().split('T')[0]);
+
+            const handleRatingChange = (itemCategory, rating) => {
+                setSelectedItems(prev => {
+                    const newItem = { rating };
+                    if (rating === '2' || rating === '3') {
+                        const goalData = comprehensiveGoalsData.find(g => g['CANS ITEM'] === itemCategory);
+                        const timeData = goalsAndTimeData[itemCategory];
+
+                        newItem.details = {
+                            ...goalData,
+                            "Face-to-Face (min/week)": timeData?.['Face-to-Face (min/week)'] || 0,
+                            "Non-Face-to-Face (min/week)": timeData?.['Non-Face-to-Face (min/week)'] || 0,
+                            "Total Weekly Minutes": timeData?.['Total Weekly Minutes'] || 0,
+                        };
+                    }
+                    return { ...prev, [itemCategory]: newItem };
+                });
+            };
+
+            const handleDateChange = (e) => {
+                setPlanDate(e.target.value);
+            };
+
+            const renderContent = () => {
+                switch (activeTab) {
+                    case 'goals':
+                        return <GoalsTable />;
+                    case 'caseload':
+                        return <CaseloadPlanner />;
+                    case 'nonF2F':
+                        return <NonF2FTasksTable />;
+                    case 'planner':
+                        return <ClientPlanner 
+                            selectedItems={selectedItems}
+                            handleRatingChange={handleRatingChange}
+                            planDate={planDate}
+                            handleDateChange={handleDateChange}
+                        />;
+                    default:
+                        return <ClientPlanner />;
+                }
+            };
+
+            const handlePrint = () => {
+                window.print();
+            };
+
+            return (
+                <div className="bg-gray-100 min-h-screen p-4 sm:p-6 lg:p-8 font-sans">
+                    <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-2xl p-6 sm:p-8 lg:p-10">
+                        <div className="flex justify-between items-center mb-2">
+                            <h1 className="text-xl sm:text-4xl font-extrabold text-blue-800 text-center flex-grow">Vivia Health Operational Planning Tool</h1>
+                            <button
+                                onClick={handlePrint}
+                                className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors duration-200 print:hidden"
+                            >
+                                Print
+                            </button>
+                        </div>
+                        <p className="text-center text-gray-600 mb-8 italic">An interactive resource for understanding service delivery and productivity</p>
+                        
+                        <div className="flex justify-center border-b border-gray-300 mb-6 space-x-2">
+                            <TabButton active={activeTab === 'planner'} onClick={() => setActiveTab('planner')}>Client Planner</TabButton>
+                            <TabButton active={activeTab === 'goals'} onClick={() => setActiveTab('goals')}>IMCANS Goals & Time</TabButton>
+                            <TabButton active={activeTab === 'caseload'} onClick={() => setActiveTab('caseload')}>Caseload Planner</TabButton>
+                            <TabButton active={activeTab === 'nonF2F'} onClick={() => setActiveTab('nonF2F')}>Non-F2F Tasks</TabButton>
+                        </div>
+                        
+                        <div className="bg-gray-50 p-6 rounded-b-xl shadow-inner">
+                            {renderContent()}
+                        </div>
+                        
+                    </div>
+                </div>
+            );
+        };
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+
+    </script>
+</body>
+</html>
